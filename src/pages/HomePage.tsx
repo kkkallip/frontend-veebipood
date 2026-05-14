@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import type { Product } from "../models/Product";
+import { Category } from "../models/Category";
 
 // renderdamine --> esmakordne componendi peale tulek
 // re-renderdamine --> componendi HTMLs muutujate olekute muutmine
@@ -10,21 +11,29 @@ function HomePage() {
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(3);
-  const [sort, setSort] = useState("id,asc")
+  const [sort, setSort] = useState("id,asc");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [activeCategoryId, setActiveCategoryId] = useState(0);
+
+  useEffect(() => {
+    fetch(import.meta.env.VITE_BACK_URL + "/categories")
+      .then(res => res.json())
+      .then(json => setCategories(json)) 
+  }, []);
   // let products = [];
   // products = json
 
   // uef --> enter
   // onLoad funktsioon
   useEffect(() => {
-    fetch(import.meta.env.VITE_BACK_URL + `/products?page=${page}&size=${size}&sort=${sort}`) // URL kuhu läheb päring
+    fetch(import.meta.env.VITE_BACK_URL + `/products?page=${page}&size=${size}&sort=${sort}&activeCategoryId=${activeCategoryId}`) // URL kuhu läheb päring
       .then(res => res.json()) // kogu tagastus
       .then(json => {
         setProducts(json.content);
         setTotalElements(json.totalElements);
         setTotalPages(json.totalPages);
       }) // response-i body
-  }, [page, size, sort]);
+  }, [page, size, sort, activeCategoryId]);
 
   const sizeHandler = (newSize: number) => {
     setSize(newSize);
@@ -33,6 +42,11 @@ function HomePage() {
 
   const sortHandler = (newSort: string) => {
     setSort(newSort);
+    setPage(0);
+  }
+
+  const activeCategoryHandler = (newCategoryId: number) => {
+    setActiveCategoryId(newCategoryId);
     setPage(0);
   }
 
@@ -52,6 +66,17 @@ function HomePage() {
       <button onClick={() => sortHandler("name,desc")}>Sorteeri Z-A</button>
       <button onClick={() => sortHandler("price,asc")}>Sorteeri Soodsamasd Enne</button>
       <button onClick={() => sortHandler("price,desc")}>Sorteeri Kallimad Enne</button>
+
+      <br/><br/>
+
+      <button style={activeCategoryId === 0 ? {fontWeight: "bold"} : undefined} onClick={() => activeCategoryHandler(0)}>Kõik kategooriad</button>
+
+      {categories.map(category => <button style={activeCategoryId === category.id ? {fontWeight: "bold"} : undefined}
+       onClick={() => activeCategoryHandler(Number(category.id))}>
+        {category.name}
+      </button>)}
+
+      <br/><br/>
 
       {products.map(product => 
         <div key={product.id}>
